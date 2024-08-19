@@ -151,10 +151,13 @@
     <ClInclude Include="dllmain.hpp" />
     <ClInclude Include="doom-idLib.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="Logging.h" />
+    <ClInclude Include="Memory.h" />
     <ClInclude Include="sigscanner.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="Memory.cpp" />
   </ItemGroup>
   <ItemGroup>
     <MASM Include="msimg32.asm" />

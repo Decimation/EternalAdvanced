@@ -12,9 +12,10 @@
 #include <iomanip>
 #include <vector>
 
-#include <Windows.h>
 #include <iostream>
 #include <Psapi.h>
+#include "Memory.h"
+#include "Logging.h"
 
 void EnumerateProcessModules();
 int  init();
@@ -22,7 +23,6 @@ int  init();
 static const char IdUsercmdGenLocalSendBtnPressFpSig[] =
 	"48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 48 89 7C 24 ? 41 56 48 83 EC 20 44 8B B1 ? ? ? ? 8B EA";
 
-std::string DE_EXE_NAME="DOOMEternalx64vk.exe";
 
 typedef __int64 (__fastcall*idUsercmdGenLocalSendBtnPressMB_t)(__int64         idUsercmdGenLocal_a1,
 															   unsigned int    deviceNumMB_a2,

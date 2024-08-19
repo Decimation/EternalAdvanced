@@ -1,9 +1,7 @@
 // ReSharper disable CppInconsistentNaming
 #include "dllmain.hpp"
 
-
 HMODULE                           baseAddr;
-std::ofstream                     logfile;
 idUsercmdGenLocalSendBtnPressMB_t p_idUsercmdGenLocalSendBtnPressMB_t        = nullptr;
 idUsercmdGenLocalSendBtnPressMB_t p_idUsercmdGenLocalSendBtnPressMB_t_Target = nullptr;
 void*                             p_idOrigFunc                               = nullptr;
@@ -42,9 +40,9 @@ __int64 __fastcall idUsercmdGenLocalSendBtnPressMB_Hook(__int64 idUsercmdGenLoca
 
 
 	auto rv = p_idUsercmdGenLocalSendBtnPressMB_t(idUsercmdGenLocal_a1, deviceNumMB_a2, keyNum_t_a3, isDown_a4);
-	logfile << std::format("{} {} {} {} -> {}", idUsercmdGenLocal_a1, deviceNumMB_a2, keyNum_t_a3, isDown_a4, rv) <<
+	g_logfile << std::format("{} {} {} {} -> {}", idUsercmdGenLocal_a1, deviceNumMB_a2, keyNum_t_a3, isDown_a4, rv) <<
 		'\n';
-	logfile.flush();
+	g_logfile.flush();
 
 	return rv;
 }
@@ -132,121 +130,21 @@ void EnumerateProcessModules()
 			TCHAR szModuleName[MAX_PATH];
 			if (GetModuleFileNameEx(hProcess, hModules[i], szModuleName, sizeof(szModuleName) / sizeof(TCHAR))) {
 				// Print the module file name
-				logfile << szModuleName << std::endl;
+				g_logfile << szModuleName << std::endl;
 			}
 		}
 	}
 }
 
 
-// Define the pattern_to_byte lambda outside of PatternScan
-static auto pattern_to_byte = [](const char* pattern)
-{
-	auto bytes = std::vector<char>{};
-	auto start = const_cast<char*>(pattern);
-	auto end   = const_cast<char*>(pattern) + strlen(pattern);
-
-	for (auto current = start; current < end; ++current) {
-		if (*current == '?') {
-			++current;
-			if (*current == '?')
-				++current;
-			bytes.push_back('\?');
-		} else {
-			bytes.push_back(strtoul(current, &current, 16));
-		}
-	}
-	return bytes;
-};
-
-DWORD64 PatternScan(const char* szModule, const char* signature)
-{
-	logfile << ("PatternScan") << '\n';
-
-	MODULEINFO mInfo;
-	HMODULE    hModule = GetModuleHandleA(szModule);
-
-	if (hModule == nullptr) {
-		logfile << std::format("GetModuleHandleA failed to find the module: %s returning", szModule) << '\n';
-		return 0; // Module not found, return an appropriate value (0 in this case).
-	}
-
-	K32GetModuleInformation(GetCurrentProcess(), hModule, &mInfo, sizeof(MODULEINFO));
-	DWORD64 base         = (DWORD64) mInfo.lpBaseOfDll;
-	DWORD64 sizeOfImage  = (DWORD64) mInfo.SizeOfImage;
-	auto    patternBytes = pattern_to_byte(signature);
-
-	DWORD64 patternLength = patternBytes.size();
-	auto    data          = patternBytes.data();
-
-	for (DWORD64 i = 0; i < sizeOfImage - patternLength; i++) {
-		bool found = true;
-		for (DWORD64 j = 0; j < patternLength; j++) {
-			char a = '\?';
-			char b = *(char*) (base + i + j);
-			found &= data[j] == a || data[j] == b;
-		}
-		if (found) {
-			DWORD64 result = base + i;
-			logfile << std::format("PatternScan Success. Found Addr: {}", (void*) result) << '\n';
-			return result;
-		}
-	}
-
-	logfile << std::format("!!! PatternScan failed !!!") << '\n';
-	return 0;
-}
-
-DWORD64 ModulePatternScan(std::string scanFriendlyName, const char* signature)
-{
-	logfile << ("ModulePatternScan") << '\n';
-
-	MODULEINFO mInfo;
-	HMODULE    hModule = GetModuleHandleA(DE_EXE_NAME.c_str());
-
-	if (hModule == nullptr) {
-		logfile << std::format("GetModuleHandleA failed to find the module: %s returning", DE_EXE_NAME.c_str()) << '\n';
-		return 0; // Module not found, return an appropriate value (0 in this case).
-	}
-
-	K32GetModuleInformation(GetCurrentProcess(), hModule, &mInfo, sizeof(MODULEINFO));
-	DWORD64 base         = (DWORD64) mInfo.lpBaseOfDll;
-	DWORD64 sizeOfImage  = (DWORD64) mInfo.SizeOfImage;
-	auto    patternBytes = pattern_to_byte(signature);
-
-	DWORD64 patternLength = patternBytes.size();
-	auto    data          = patternBytes.data();
-
-	for (DWORD64 i = 0; i < sizeOfImage - patternLength; i++) {
-		bool found = true;
-		for (DWORD64 j = 0; j < patternLength; j++) {
-			char a = '\?';
-			char b = *(char*) (base + i + j);
-			found &= data[j] == a || data[j] == b;
-		}
-		if (found) {
-			DWORD64 result = base + i;
-			logfile << std::format("PatternScan Success for {} Found Addr: {}", scanFriendlyName.c_str(),
-								   (void*) result) << '\n';
-			return result;
-		}
-	}
-
-	logfile << std::format("!!! PatternScan failed for: {}", scanFriendlyName.c_str()) << '\n';
-	return 0;
-}
-
 int init()
 {
 	int ret = 0;
 
-	baseAddr = GetModuleHandle(nullptr);
-	logfile << "@" << std::hex << baseAddr << "\n";
-
 	p_idUsercmdGenLocalSendBtnPressMB_t_Target = reinterpret_cast<idUsercmdGenLocalSendBtnPressMB_t>(
 		ModulePatternScan("test", IdUsercmdGenLocalSendBtnPressFpSig));
 
-	logfile << "@" << std::hex << p_idUsercmdGenLocalSendBtnPressMB_t_Target << "\n";
+	g_logfile << "@" << std::hex << p_idUsercmdGenLocalSendBtnPressMB_t_Target << "\n";
 
 	if (MH_Initialize() != MH_OK) {
 		ret = 1;
@@ -254,30 +152,22 @@ int init()
 	}
 
 	for (auto ix = 0; ix < 8; ix++)
-		logfile << "byte: " << std::hex << (int) reinterpret_cast<uint8_t*>(p_idUsercmdGenLocalSendBtnPressMB_t_Target)[
-			ix] << " ";
+		g_logfile << "byte: " << std::hex <<
+			(int) reinterpret_cast<uint8_t*>(p_idUsercmdGenLocalSendBtnPressMB_t_Target)[ix] << " ";
 
 	// p_idUsercmdGenLocalSendBtnPressMB_t_Target = reinterpret_cast<idUsercmdGenLocalSendBtnPressMB_t>(p_idOrigFunc);
 
 	// Create a hook for MessageBoxW, in disabled state.
-	if (MH_CreateHook(reinterpret_cast<void**>(p_idUsercmdGenLocalSendBtnPressMB_t_Target),
-					  &idUsercmdGenLocalSendBtnPressMB_Hook,
+	if (MH_CreateHook(p_idUsercmdGenLocalSendBtnPressMB_t_Target, &idUsercmdGenLocalSendBtnPressMB_Hook,
 					  reinterpret_cast<void**>(&p_idUsercmdGenLocalSendBtnPressMB_t))) {
-		logfile << "failed to create hook";
+		g_logfile << "failed to create hook";
 		ret = 1;
 		goto ret;
 	}
 
-	// or you can use the new helper function like this.
-	//if (MH_CreateHookApiEx(
-	//    L"user32", "MessageBoxW", &DetourMessageBoxW, &fpMessageBoxW) != MH_OK)
-	//{
-	//    return 1;
-	//}
-
 	// Enable the hook for MessageBoxW.
 	if (MH_EnableHook(NULL) != MH_OK) {
-		logfile << "failed to enable hook";
+		g_logfile << "failed to enable hook";
 		ret = 1;
 		goto ret;
 	}
@@ -303,11 +193,11 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 
 	switch (ul_reason_for_call) {
 	case DLL_PROCESS_ATTACH:
-		logfile = std::ofstream("log.txt", std::ios::app);
+		g_logfile = std::ofstream("log.txt", std::ios::app);
 
-		logfile << "Loaded" << '\n';
+		g_logfile << "Loaded" << '\n';
 		if (GetCallingModuleName().ends_with("idTechLauncher.exe")) {
-			logfile << "Exiting" << '\n';
+			g_logfile << "Exiting" << '\n';
 			return 1;
 		}
 
@@ -324,15 +214,15 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 		break;
 	case DLL_PROCESS_DETACH:
 
-		logfile << "Detaching" << '\n';
+		g_logfile << "Detaching" << '\n';
 		FreeLibrary(msimg32.dll);
-		logfile.flush();
-		logfile.close();
+		g_logfile.flush();
+		g_logfile.close();
 		break;
 	}
 
 ret:
-	logfile << "DllMain return" << '\n';
+	g_logfile << "DllMain return" << '\n';
 
 	return TRUE;
 }
