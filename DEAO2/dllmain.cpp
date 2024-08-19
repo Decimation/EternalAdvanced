@@ -6,7 +6,7 @@ HMODULE                           baseAddr;
 std::ofstream                     logfile;
 idUsercmdGenLocalSendBtnPressMB_t p_idUsercmdGenLocalSendBtnPressMB_t        = nullptr;
 idUsercmdGenLocalSendBtnPressMB_t p_idUsercmdGenLocalSendBtnPressMB_t_Target = nullptr;
-void*                           p_idOrigFunc;
+void*                             p_idOrigFunc                               = nullptr;
 
 template <typename T>
 inline MH_STATUS MH_CreateHookEx(LPVOID pTarget, LPVOID pDetour, T** ppOriginal)
@@ -41,7 +41,7 @@ __int64 __fastcall idUsercmdGenLocalSendBtnPressMB_Hook(__int64 idUsercmdGenLoca
 		lastIsDown_a4 = isDown_a4;
 	}*/
 
-
+	logfile << std::format("{} {} {} {}", idUsercmdGenLocal_a1, deviceNumMB_a2, keyNum_t_a3, isDown_a4) << '\n';
 	return p_idUsercmdGenLocalSendBtnPressMB_t(idUsercmdGenLocal_a1, deviceNumMB_a2, keyNum_t_a3, isDown_a4);
 }
 
@@ -248,8 +248,10 @@ int init()
 	baseAddr = GetModuleHandle(nullptr);
 	logfile << "@" << std::hex << baseAddr << "\n";
 
-	p_idOrigFunc = reinterpret_cast<void*>(ModulePatternScan("test", IdUsercmdGenLocalSendBtnPressFpSig));
-	logfile << "@" << std::hex << p_idOrigFunc << "\n";
+	p_idUsercmdGenLocalSendBtnPressMB_t_Target = reinterpret_cast<idUsercmdGenLocalSendBtnPressMB_t>(
+		ModulePatternScan("test", IdUsercmdGenLocalSendBtnPressFpSig));
+
+	logfile << "@" << std::hex << p_idUsercmdGenLocalSendBtnPressMB_t_Target << "\n";
 
 	if (MH_Initialize() != MH_OK) {
 		ret = 1;
@@ -257,13 +259,14 @@ int init()
 	}
 
 	for (auto ix = 0; ix < 8; ix++)
-		logfile << "byte: " << std::hex << (int) reinterpret_cast<uint8_t*>(p_idOrigFunc)[ix] << " ";
+		logfile << "byte: " << std::hex << (int)reinterpret_cast<uint8_t*>(p_idUsercmdGenLocalSendBtnPressMB_t_Target)[
+			ix] << " ";
 
 	// p_idUsercmdGenLocalSendBtnPressMB_t_Target = reinterpret_cast<idUsercmdGenLocalSendBtnPressMB_t>(p_idOrigFunc);
 
 	// Create a hook for MessageBoxW, in disabled state.
-	if (MH_CreateHook(&p_idUsercmdGenLocalSendBtnPressMB_t_Target, &p_idUsercmdGenLocalSendBtnPressMB_t,
-					  reinterpret_cast<LPVOID*>(p_idOrigFunc))) {
+	if (MH_CreateHook(reinterpret_cast<void**>(p_idUsercmdGenLocalSendBtnPressMB_t_Target), &idUsercmdGenLocalSendBtnPressMB_Hook,
+	                  reinterpret_cast<void**>(&p_idUsercmdGenLocalSendBtnPressMB_t))) {
 		logfile << "failed to create hook";
 		ret = 1;
 		goto ret;
