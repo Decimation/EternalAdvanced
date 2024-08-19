@@ -18,8 +18,7 @@ template <typename T>
 inline MH_STATUS MH_CreateHookApiEx(
 	LPCWSTR pszModule, LPCSTR pszProcName, LPVOID pDetour, T** ppOriginal)
 {
-	return MH_CreateHookApi(
-							pszModule, pszProcName, pDetour, reinterpret_cast<LPVOID*>(ppOriginal));
+	return MH_CreateHookApi(pszModule, pszProcName, pDetour, reinterpret_cast<LPVOID*>(ppOriginal));
 }
 
 
@@ -41,8 +40,13 @@ __int64 __fastcall idUsercmdGenLocalSendBtnPressMB_Hook(__int64 idUsercmdGenLoca
 		lastIsDown_a4 = isDown_a4;
 	}*/
 
-	logfile << std::format("{} {} {} {}", idUsercmdGenLocal_a1, deviceNumMB_a2, keyNum_t_a3, isDown_a4) << '\n';
-	return p_idUsercmdGenLocalSendBtnPressMB_t(idUsercmdGenLocal_a1, deviceNumMB_a2, keyNum_t_a3, isDown_a4);
+
+	auto rv = p_idUsercmdGenLocalSendBtnPressMB_t(idUsercmdGenLocal_a1, deviceNumMB_a2, keyNum_t_a3, isDown_a4);
+	logfile << std::format("{} {} {} {} -> {}", idUsercmdGenLocal_a1, deviceNumMB_a2, keyNum_t_a3, isDown_a4, rv) <<
+		'\n';
+	logfile.flush();
+
+	return rv;
 }
 
 #pragma region Proxy
@@ -110,15 +114,6 @@ void setupFunctions()
  */
 
 
-BOOL IsKeyPressed(int keyCode)
-{
-	return (GetKeyState(keyCode) & 0x8000) != 0;
-}
-
-#include <Windows.h>
-#include <iostream>
-#include <Psapi.h>
-
 void EnumerateProcessModules()
 {
 	// Get the handle to the current process
@@ -177,8 +172,8 @@ DWORD64 PatternScan(const char* szModule, const char* signature)
 	}
 
 	K32GetModuleInformation(GetCurrentProcess(), hModule, &mInfo, sizeof(MODULEINFO));
-	DWORD64 base         = (DWORD64)mInfo.lpBaseOfDll;
-	DWORD64 sizeOfImage  = (DWORD64)mInfo.SizeOfImage;
+	DWORD64 base         = (DWORD64) mInfo.lpBaseOfDll;
+	DWORD64 sizeOfImage  = (DWORD64) mInfo.SizeOfImage;
 	auto    patternBytes = pattern_to_byte(signature);
 
 	DWORD64 patternLength = patternBytes.size();
@@ -188,12 +183,12 @@ DWORD64 PatternScan(const char* szModule, const char* signature)
 		bool found = true;
 		for (DWORD64 j = 0; j < patternLength; j++) {
 			char a = '\?';
-			char b = *(char*)(base + i + j);
+			char b = *(char*) (base + i + j);
 			found &= data[j] == a || data[j] == b;
 		}
 		if (found) {
 			DWORD64 result = base + i;
-			logfile << std::format("PatternScan Success. Found Addr: {}", (void*)result) << '\n';
+			logfile << std::format("PatternScan Success. Found Addr: {}", (void*) result) << '\n';
 			return result;
 		}
 	}
@@ -215,8 +210,8 @@ DWORD64 ModulePatternScan(std::string scanFriendlyName, const char* signature)
 	}
 
 	K32GetModuleInformation(GetCurrentProcess(), hModule, &mInfo, sizeof(MODULEINFO));
-	DWORD64 base         = (DWORD64)mInfo.lpBaseOfDll;
-	DWORD64 sizeOfImage  = (DWORD64)mInfo.SizeOfImage;
+	DWORD64 base         = (DWORD64) mInfo.lpBaseOfDll;
+	DWORD64 sizeOfImage  = (DWORD64) mInfo.SizeOfImage;
 	auto    patternBytes = pattern_to_byte(signature);
 
 	DWORD64 patternLength = patternBytes.size();
@@ -226,13 +221,13 @@ DWORD64 ModulePatternScan(std::string scanFriendlyName, const char* signature)
 		bool found = true;
 		for (DWORD64 j = 0; j < patternLength; j++) {
 			char a = '\?';
-			char b = *(char*)(base + i + j);
+			char b = *(char*) (base + i + j);
 			found &= data[j] == a || data[j] == b;
 		}
 		if (found) {
 			DWORD64 result = base + i;
 			logfile << std::format("PatternScan Success for {} Found Addr: {}", scanFriendlyName.c_str(),
-								   (void*)result) << '\n';
+								   (void*) result) << '\n';
 			return result;
 		}
 	}
@@ -259,14 +254,15 @@ int init()
 	}
 
 	for (auto ix = 0; ix < 8; ix++)
-		logfile << "byte: " << std::hex << (int)reinterpret_cast<uint8_t*>(p_idUsercmdGenLocalSendBtnPressMB_t_Target)[
+		logfile << "byte: " << std::hex << (int) reinterpret_cast<uint8_t*>(p_idUsercmdGenLocalSendBtnPressMB_t_Target)[
 			ix] << " ";
 
 	// p_idUsercmdGenLocalSendBtnPressMB_t_Target = reinterpret_cast<idUsercmdGenLocalSendBtnPressMB_t>(p_idOrigFunc);
 
 	// Create a hook for MessageBoxW, in disabled state.
-	if (MH_CreateHook(reinterpret_cast<void**>(p_idUsercmdGenLocalSendBtnPressMB_t_Target), &idUsercmdGenLocalSendBtnPressMB_Hook,
-	                  reinterpret_cast<void**>(&p_idUsercmdGenLocalSendBtnPressMB_t))) {
+	if (MH_CreateHook(reinterpret_cast<void**>(p_idUsercmdGenLocalSendBtnPressMB_t_Target),
+					  &idUsercmdGenLocalSendBtnPressMB_Hook,
+					  reinterpret_cast<void**>(&p_idUsercmdGenLocalSendBtnPressMB_t))) {
 		logfile << "failed to create hook";
 		ret = 1;
 		goto ret;
@@ -280,7 +276,7 @@ int init()
 	//}
 
 	// Enable the hook for MessageBoxW.
-	if (MH_EnableHook(reinterpret_cast<void*>(p_idUsercmdGenLocalSendBtnPressMB_t_Target)) != MH_OK) {
+	if (MH_EnableHook(NULL) != MH_OK) {
 		logfile << "failed to enable hook";
 		ret = 1;
 		goto ret;
@@ -327,12 +323,16 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 	// Add here your code, I recommend you to create a thread
 		break;
 	case DLL_PROCESS_DETACH:
+
+		logfile << "Detaching" << '\n';
 		FreeLibrary(msimg32.dll);
+		logfile.flush();
+		logfile.close();
 		break;
 	}
 
 ret:
-	logfile.flush();
-	logfile.close();
-	return 1;
+	logfile << "DllMain return" << '\n';
+
+	return TRUE;
 }

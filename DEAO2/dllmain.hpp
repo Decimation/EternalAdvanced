@@ -11,6 +11,11 @@
 #include "sigscanner.h"
 #include <iomanip>
 #include <vector>
+
+#include <Windows.h>
+#include <iostream>
+#include <Psapi.h>
+
 void EnumerateProcessModules();
 int  init();
 
