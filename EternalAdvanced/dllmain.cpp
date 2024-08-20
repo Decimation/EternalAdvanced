@@ -17,13 +17,11 @@ inline MH_STATUS MH_CreateHookApiEx(
 	return MH_CreateHookApi(pszModule, pszProcName, pDetour, reinterpret_cast<LPVOID*>(ppOriginal));
 }
 
-
 __int64 __fastcall idUsercmdGenLocalSendBtnPressMB_Hook(__int64      idUsercmdGenLocal_a1, unsigned int deviceNumMB_a2,
                                                         id::keyNum_t keyNum_t_a3, unsigned __int8       isDown_a4)
 {
 	static int             lastKeyNum_t_a3 = -1;
 	static unsigned __int8 lastIsDown_a4   = 0;
-
 
 	//todo this works, not using it atm but we might use it in the incoming rewrite of the mod
 	/*if (keyNum_t_a3 != lastKeyNum_t_a3) {

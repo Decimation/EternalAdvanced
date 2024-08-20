@@ -15,6 +15,12 @@
 	DEFINE_FUNCTION_POINTER(returnType, functionName, __VA_ARGS__) \
 	returnType functionName##_Hook(__VA_ARGS__);
 
+#define DEFINE_FUNCTION_POINTER3(function, name) \
+	typedef decltype(&(function)) (name); \
+
+#define DEFINE_FUNCTION_POINTER4(function) \
+	DEFINE_FUNCTION_POINTER3(function, function##_t)
+
 DWORD64           PatternScan(const char* szModule, const char* signature);
 DWORD64           PatternScan(HMODULE hModule, const char* signature);
 std::vector<char> PatternToByte(const char* pattern);
