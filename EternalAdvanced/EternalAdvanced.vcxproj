@@ -23,8 +23,9 @@
 		<VCProjectVersion>17.0</VCProjectVersion>
 		<Keyword>Win32Proj</Keyword>
 		<ProjectGuid>{7951d492-cd68-4cca-9a3d-ce5284097439}</ProjectGuid>
-		<RootNamespace>DEAO2</RootNamespace>
+		<RootNamespace>EternalAdvanced</RootNamespace>
 		<WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+		<ProjectName>EternalAdvanced</ProjectName>
 	</PropertyGroup>
 	<Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -88,7 +89,7 @@
 		<ClCompile>
 			<WarningLevel>Level3</WarningLevel>
 			<SDLCheck>true</SDLCheck>
-			<PreprocessorDefinitions>WIN32;_DEBUG;DEAO2_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<PreprocessorDefinitions>WIN32;_DEBUG;EternalAdvanced_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
 			<ConformanceMode>true</ConformanceMode>
 		</ClCompile>
 		<Link>
@@ -103,7 +104,7 @@
 			<FunctionLevelLinking>true</FunctionLevelLinking>
 			<IntrinsicFunctions>true</IntrinsicFunctions>
 			<SDLCheck>true</SDLCheck>
-			<PreprocessorDefinitions>WIN32;NDEBUG;DEAO2_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<PreprocessorDefinitions>WIN32;NDEBUG;EternalAdvanced_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
 			<ConformanceMode>true</ConformanceMode>
 			<PrecompiledHeader>Use</PrecompiledHeader>
 			<PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -120,17 +121,17 @@
 		<ClCompile>
 			<WarningLevel>Level3</WarningLevel>
 			<SDLCheck>true</SDLCheck>
-			<PreprocessorDefinitions>_DEBUG;DEAO2_EXPORTS;_WINDOWS;WIN32;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<PreprocessorDefinitions>_DEBUG;EternalAdvanced_EXPORTS;_WINDOWS;WIN32;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
 			<ConformanceMode>true</ConformanceMode>
 			<LanguageStandard>stdcpplatest</LanguageStandard>
 			<LanguageStandard_C>Default</LanguageStandard_C>
-			<AdditionalIncludeDirectories>C:\Users\Deci\VSProjects\DEAO2\DEAO2\RPCInterface;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+			<AdditionalIncludeDirectories>C:\Users\Deci\VSProjects\EternalAdvanced\EternalAdvanced\RPCInterface;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 		</ClCompile>
 		<Link>
 			<SubSystem>Windows</SubSystem>
 			<GenerateDebugInformation>true</GenerateDebugInformation>
 			<EnableUAC>false</EnableUAC>
-			<ModuleDefinitionFile>$(SolutionDir)DEAO2\msimg32.def</ModuleDefinitionFile>
+			<ModuleDefinitionFile>$(SolutionDir)EternalAdvanced\msimg32.def</ModuleDefinitionFile>
 			<EnableCOMDATFolding>true</EnableCOMDATFolding>
 		</Link>
 		<PostBuildEvent>
@@ -145,7 +146,7 @@
 			<FunctionLevelLinking>true</FunctionLevelLinking>
 			<IntrinsicFunctions>true</IntrinsicFunctions>
 			<SDLCheck>true</SDLCheck>
-			<PreprocessorDefinitions>NDEBUG;DEAO2_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<PreprocessorDefinitions>NDEBUG;EternalAdvanced_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
 			<ConformanceMode>true</ConformanceMode>
 			<PrecompiledHeader>NotUsing</PrecompiledHeader>
 			<LanguageStandard>stdcpplatest</LanguageStandard>
@@ -156,7 +157,7 @@
 			<OptimizeReferences>true</OptimizeReferences>
 			<GenerateDebugInformation>true</GenerateDebugInformation>
 			<EnableUAC>false</EnableUAC>
-			<ModuleDefinitionFile>$(SolutionDir)DEAO2\msimg32.def</ModuleDefinitionFile>
+			<ModuleDefinitionFile>$(SolutionDir)EternalAdvanced\msimg32.def</ModuleDefinitionFile>
 		</Link>
 	</ItemDefinitionGroup>
 	<ItemGroup>
