@@ -108,6 +108,7 @@ void setupFunctions()
 int init()
 {
 	int ret = 0;
+
 	id::init();
 
 	p_idUsercmdGenLocalSendBtnPressMB_t_Target = reinterpret_cast<idUsercmdGenLocalSendBtnPressMB_t>(
@@ -148,16 +149,22 @@ ret:
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
 	//Initialize MinHook.
-	init_log();
 
 
 	switch (ul_reason_for_call) {
+	case DLL_THREAD_ATTACH:
+	case DLL_THREAD_DETACH:
+		break;
 	case DLL_PROCESS_ATTACH:
+		init_log();
 
-		g_logfile << "Loaded" << '\n';
+		g_logfile << std::format("DllMain {}", (void*) hModule) << '\n';
+		g_logfile << "Dll attach" << '\n';
 		if (GetCallingModuleName().ends_with("idTechLauncher.exe")) {
 			g_logfile << "Exiting" << '\n';
-			return 1;
+			FreeLibrary(msimg32.dll);
+			close_log();
+			return TRUE;
 		}
 
 		char path[MAX_PATH];
@@ -180,7 +187,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 	}
 
 ret:
-	g_logfile << "DllMain return" << '\n';
+	// g_logfile << "DllMain return" << '\n';
 
 	return TRUE;
 }
