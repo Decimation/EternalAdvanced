@@ -1,8 +1,8 @@
 // ReSharper disable CppInconsistentNaming
 #include "dllmain.hpp"
 
-idUsercmdGenLocalSendBtnPressMB_t p_idUsercmdGenLocalSendBtnPressMB_t        = nullptr;
-idUsercmdGenLocalSendBtnPressMB_t p_idUsercmdGenLocalSendBtnPressMB_t_Target = nullptr;
+#include "idHooks.h"
+
 
 template <typename T>
 inline MH_STATUS MH_CreateHookEx(LPVOID pTarget, LPVOID pDetour, T** ppOriginal)
@@ -17,34 +17,6 @@ inline MH_STATUS MH_CreateHookApiEx(
 	return MH_CreateHookApi(pszModule, pszProcName, pDetour, reinterpret_cast<LPVOID*>(ppOriginal));
 }
 
-__int64 __fastcall idUsercmdGenLocalSendBtnPressMB_Hook(__int64      idUsercmdGenLocal_a1, unsigned int deviceNumMB_a2,
-                                                        id::keyNum_t keyNum_t_a3, unsigned __int8       isDown_a4)
-{
-	static int             lastKeyNum_t_a3 = -1;
-	static unsigned __int8 lastIsDown_a4   = 0;
-
-	//todo this works, not using it atm but we might use it in the incoming rewrite of the mod
-	/*if (keyNum_t_a3 != lastKeyNum_t_a3) {
-		logInfo("keyNum_t_a3 has changed to: 0x%X (isDown_a4: %d)", keyNum_t_a3, isDown_a4);
-		lastKeyNum_t_a3 = keyNum_t_a3;
-	}
-
-	if (isDown_a4 != lastIsDown_a4) {
-		logInfo("isDown_a4 has changed to: %d",  isDown_a4);
-		lastIsDown_a4 = isDown_a4;
-	}*/
-
-
-	auto rv = p_idUsercmdGenLocalSendBtnPressMB_t(idUsercmdGenLocal_a1, deviceNumMB_a2, keyNum_t_a3, isDown_a4);
-
-
-	auto x =
-		std::format("{} {} {} {} -> {}", idUsercmdGenLocal_a1, deviceNumMB_a2, (int) keyNum_t_a3, isDown_a4, rv);
-	g_logfile << x << '\n';
-	g_logfile.flush();
-
-	return rv;
-}
 
 #pragma region Proxy
 struct msimg32_dll
@@ -109,36 +81,7 @@ int init()
 
 	id::init();
 
-	p_idUsercmdGenLocalSendBtnPressMB_t_Target = reinterpret_cast<idUsercmdGenLocalSendBtnPressMB_t>(
-		PatternScan(id::DE_EXE_MODULE, IdUsercmdGenLocalSendBtnPressFpSig));
-
-	g_logfile << "@" << std::hex << p_idUsercmdGenLocalSendBtnPressMB_t_Target << "\n";
-
-	if (MH_Initialize() != MH_OK) {
-		ret = 1;
-		goto ret;
-	}
-
-	for (auto ix = 0; ix < 8; ix++)
-		g_logfile << "byte: " << std::hex <<
-			(int) reinterpret_cast<uint8_t*>(p_idUsercmdGenLocalSendBtnPressMB_t_Target)[ix] << " ";
-
-	// p_idUsercmdGenLocalSendBtnPressMB_t_Target = reinterpret_cast<idUsercmdGenLocalSendBtnPressMB_t>(p_idOrigFunc);
-
-	// Create a hook for MessageBoxW, in disabled state.
-	if (MH_CreateHook(p_idUsercmdGenLocalSendBtnPressMB_t_Target, &idUsercmdGenLocalSendBtnPressMB_Hook,
-	                  reinterpret_cast<void**>(&p_idUsercmdGenLocalSendBtnPressMB_t))) {
-		g_logfile << "failed to create hook";
-		ret = 1;
-		goto ret;
-	}
-
-	// Enable the hook for MessageBoxW.
-	if (MH_EnableHook(NULL) != MH_OK) {
-		g_logfile << "failed to enable hook";
-		ret = 1;
-		goto ret;
-	}
+	inithooks();
 ret:
 	return ret;
 }
@@ -150,12 +93,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 
 
 	switch (ul_reason_for_call) {
-	case DLL_THREAD_ATTACH:
-	case DLL_THREAD_DETACH:
-		break;
 	case DLL_PROCESS_ATTACH:
 		init_log();
-
+	// DisableThreadLibraryCalls(hModule);
 		g_logfile << std::format("DllMain {}", (void*) hModule) << '\n';
 		g_logfile << "Dll attach" << '\n';
 		if (GetCallingModuleName().ends_with("idTechLauncher.exe")) {
@@ -173,6 +113,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 		msimg32.dll = LoadLibrary(path);
 		setupFunctions();
 		init();
+	//CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(Initialise), (PVOID)hModule, NULL, NULL);
 
 	// Add here your code, I recommend you to create a thread
 		break;
