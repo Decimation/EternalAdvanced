@@ -8,8 +8,17 @@
 #include "Logging.h"
 #include <vector>
 
-const inline std::string DE_EXE_NAME = "DOOMEternalx64vk.exe";
+#define DEFINE_FUNCTION_POINTER(returnType, functionName, ...) \
+	typedef returnType(*functionName##_t)(__VA_ARGS__);
 
-DWORD64           ModulePatternScan(std::string scanFriendlyName, const char* signature);
+#define DEFINE_FUNCTION_POINTER2(returnType, functionName, ...) \
+	DEFINE_FUNCTION_POINTER(returnType, functionName, __VA_ARGS__) \
+	returnType functionName##_Hook(__VA_ARGS__);
+
 DWORD64           PatternScan(const char* szModule, const char* signature);
+DWORD64           PatternScan(HMODULE hModule, const char* signature);
 std::vector<char> PatternToByte(const char* pattern);
+
+std::string GetCallingModuleName();
+void        EnumerateProcessModules();
+

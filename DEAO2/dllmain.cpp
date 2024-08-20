@@ -1,10 +1,8 @@
 // ReSharper disable CppInconsistentNaming
 #include "dllmain.hpp"
 
-HMODULE                           baseAddr;
 idUsercmdGenLocalSendBtnPressMB_t p_idUsercmdGenLocalSendBtnPressMB_t        = nullptr;
 idUsercmdGenLocalSendBtnPressMB_t p_idUsercmdGenLocalSendBtnPressMB_t_Target = nullptr;
-void*                             p_idOrigFunc                               = nullptr;
 
 template <typename T>
 inline MH_STATUS MH_CreateHookEx(LPVOID pTarget, LPVOID pDetour, T** ppOriginal)
@@ -20,8 +18,8 @@ inline MH_STATUS MH_CreateHookApiEx(
 }
 
 
-__int64 __fastcall idUsercmdGenLocalSendBtnPressMB_Hook(__int64 idUsercmdGenLocal_a1, unsigned int deviceNumMB_a2,
-														int     keyNum_t_a3, unsigned __int8       isDown_a4)
+__int64 __fastcall idUsercmdGenLocalSendBtnPressMB_Hook(__int64      idUsercmdGenLocal_a1, unsigned int deviceNumMB_a2,
+                                                        id::keyNum_t keyNum_t_a3, unsigned __int8       isDown_a4)
 {
 	static int             lastKeyNum_t_a3 = -1;
 	static unsigned __int8 lastIsDown_a4   = 0;
@@ -40,8 +38,11 @@ __int64 __fastcall idUsercmdGenLocalSendBtnPressMB_Hook(__int64 idUsercmdGenLoca
 
 
 	auto rv = p_idUsercmdGenLocalSendBtnPressMB_t(idUsercmdGenLocal_a1, deviceNumMB_a2, keyNum_t_a3, isDown_a4);
-	g_logfile << std::format("{} {} {} {} -> {}", idUsercmdGenLocal_a1, deviceNumMB_a2, keyNum_t_a3, isDown_a4, rv) <<
-		'\n';
+
+
+	auto x =
+		std::format("{} {} {} {} -> {}", idUsercmdGenLocal_a1, deviceNumMB_a2, (int) keyNum_t_a3, isDown_a4, rv);
+	g_logfile << x << '\n';
 	g_logfile.flush();
 
 	return rv;
@@ -103,46 +104,14 @@ void setupFunctions()
 }
 #pragma endregion
 
-/*
- *
- * [--------------]				[--------------]			[--------------]
- *		PROXY				<---		ORIG			->>>			ADDR SPACE
- * [--------------]				[--------------]			[--------------]
- *
- */
-
-
-void EnumerateProcessModules()
-{
-	// Get the handle to the current process
-	HANDLE hProcess = GetCurrentProcess();
-
-	// Get the list of module handles for the current process
-	HMODULE hModules[1024];
-	DWORD   cbNeeded;
-	if (EnumProcessModules(hProcess, hModules, sizeof(hModules), &cbNeeded)) {
-		// Calculate the number of modules
-		int numModules = cbNeeded / sizeof(HMODULE);
-
-		// Iterate through the modules
-		for (int i = 0; i < numModules; i++) {
-			// Get the module file name
-			TCHAR szModuleName[MAX_PATH];
-			if (GetModuleFileNameEx(hProcess, hModules[i], szModuleName, sizeof(szModuleName) / sizeof(TCHAR))) {
-				// Print the module file name
-				g_logfile << szModuleName << std::endl;
-			}
-		}
-	}
-}
-
 
 int init()
 {
 	int ret = 0;
+	id::init();
 
 	p_idUsercmdGenLocalSendBtnPressMB_t_Target = reinterpret_cast<idUsercmdGenLocalSendBtnPressMB_t>(
-		ModulePatternScan("test", IdUsercmdGenLocalSendBtnPressFpSig));
+		PatternScan(id::DE_EXE_MODULE, IdUsercmdGenLocalSendBtnPressFpSig));
 
 	g_logfile << "@" << std::hex << p_idUsercmdGenLocalSendBtnPressMB_t_Target << "\n";
 
@@ -159,7 +128,7 @@ int init()
 
 	// Create a hook for MessageBoxW, in disabled state.
 	if (MH_CreateHook(p_idUsercmdGenLocalSendBtnPressMB_t_Target, &idUsercmdGenLocalSendBtnPressMB_Hook,
-					  reinterpret_cast<void**>(&p_idUsercmdGenLocalSendBtnPressMB_t))) {
+	                  reinterpret_cast<void**>(&p_idUsercmdGenLocalSendBtnPressMB_t))) {
 		g_logfile << "failed to create hook";
 		ret = 1;
 		goto ret;
@@ -175,25 +144,15 @@ ret:
 	return ret;
 }
 
-std::string GetCallingModuleName()
-{
-	HMODULE hModule = GetModuleHandle(nullptr);
-	TCHAR   szModuleName[MAX_PATH];
-
-	if (GetModuleFileName(hModule, szModuleName, MAX_PATH) != 0) {
-		std::string moduleName(szModuleName);
-		return moduleName;
-	}
-	return "";
-}
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
 	//Initialize MinHook.
+	init_log();
+
 
 	switch (ul_reason_for_call) {
 	case DLL_PROCESS_ATTACH:
-		g_logfile = std::ofstream("log.txt", std::ios::app);
 
 		g_logfile << "Loaded" << '\n';
 		if (GetCallingModuleName().ends_with("idTechLauncher.exe")) {
@@ -216,8 +175,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 
 		g_logfile << "Detaching" << '\n';
 		FreeLibrary(msimg32.dll);
-		g_logfile.flush();
-		g_logfile.close();
+		close_log();
 		break;
 	}
 
