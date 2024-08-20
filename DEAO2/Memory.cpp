@@ -72,6 +72,36 @@ DWORD64 PatternScan(HMODULE hModule, const char* signature)
 }
 
 
+
+__int64 FindPtrFromRelativeOffset(uintptr_t instructionStartAddress, const int instructionOffset, const int nextInstructionOffset) {
+
+	g_logfile << "FindPtrFromRelativeOffset: " << std::hex << instructionStartAddress << "\n";
+	
+	__int64 relativeOffsetAddr = instructionStartAddress + instructionOffset;
+	HANDLE hProcess = GetCurrentProcess();
+	uint8_t buffer[4]; //! reading 4 cause it's an 4 bytes offset.	
+	SIZE_T bytesRead;
+	//! int and not uint as the offset has to be signed
+	int relativeOffsetValue = 0;
+	if (ReadProcessMemory(hProcess, (LPCVOID)relativeOffsetAddr, buffer, sizeof(buffer), &bytesRead)) {
+		if (bytesRead == sizeof(buffer)) {			
+			int relativeOffsetValue = *reinterpret_cast<int*>(buffer);			
+			__int64 nextInstructionAddress = instructionStartAddress + nextInstructionOffset;			
+			__int64 ptr = nextInstructionAddress + relativeOffsetValue;
+			g_logfile << "FindPtrFromRelativeOffset: found ptr: " << std::hex << ptr << "\n";
+			return ptr;
+		}
+	}
+	else {
+		g_logfile << "FindPtrFromRelativeOffset: failed for instructionStartAddress:  " << instructionStartAddress << "\n";
+
+	}
+	return 0;
+}
+
+
+
+
 void EnumerateProcessModules()
 {
 	// Get the handle to the current process

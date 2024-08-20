@@ -135,7 +135,7 @@
 		</Link>
 		<PostBuildEvent>
 			<Command>
-	  copy "$(OutputPath)msimg32.dll" "I:\Steam\steamapps\common\DOOMEternal\" /Y
+	  copy "$(OutputPath)msimg32.dll" "C:\Program Files (x86)\Steam\steamapps\common\DOOMEternal\" /Y
 			</Command>
 		</PostBuildEvent>
 	</ItemDefinitionGroup>
