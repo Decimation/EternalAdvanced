@@ -32,6 +32,26 @@ getFovTargetVal_t p_getFovTargetVal_t_Target = nullptr;
 SelectWeaponForSelectionGroup_t p_SelectWeaponForSelectionGroup_t = nullptr;
 SelectWeaponForSelectionGroup_t p_SelectWeaponForSelectionGroup_t_Target = nullptr;
 
+isKeyPressed_t p_isKeyPressed_t = nullptr;
+isKeyPressed_t p_isKeyPressed_t_Target = nullptr;
+
+BindsStrSet_t p_BindsStrSet_t = nullptr;
+BindsStrSet_t p_BindsStrSet_t_Target = nullptr;
+
+idHUD_Reticle_SetActiveReticle_t p_idHUD_Reticle_SetActiveReticle_t = nullptr;
+idHUD_Reticle_SetActiveReticle_t p_idHUD_Reticle_SetActiveReticle_t_Target = nullptr;
+
+convertIdDeclUIColorToidColor_t p_convertIdDeclUIColorToidColor_t = nullptr;
+convertIdDeclUIColorToidColor_t p_convertIdDeclUIColorToidColor_t_Target = nullptr;
+
+setSpriteInstanceColor_t p_setSpriteInstanceColor_t = nullptr;
+setSpriteInstanceColor_t p_setSpriteInstanceColor_t_Target = nullptr;
+
+printOutlinedString_t p_printOutlinedString_t = nullptr;
+printOutlinedString_t p_printOutlinedString_t_Target = nullptr;
+
+
+
 template <typename T>
 inline MH_STATUS MH_CreateHookEx(LPVOID pTarget, LPVOID pDetour, T** ppOriginal)
 {
@@ -202,6 +222,191 @@ char __fastcall SelectWeaponForSelectionGroupHook(__int64 a1, int weaponIndex_a2
 }
 
 
+// this checks only the keys bound to an action, this is used to have dedicated grenade keys and also to check the last key weapon key pressed so can correct it if the current equipped weapon is not what it should be.
+bool __fastcall isKeyPressedHook(__int64 ptr, __int64 btnEnum) {
+
+	// can not fill the func cause a lot of data structure are not in id.h yet
+
+	return p_isKeyPressed_t(ptr, btnEnum);
+
+}
+
+
+//used to ovewrite the string in the Slayer control strings so that if user uses dedicated grenade keys, they will be correctly labeled as so.
+__int64 __fastcall BindsStrSetHook(__int64* a1, unsigned char* a2) {
+
+	/*if (!modSettings::getIsUseDedicatedNadeKeys()) {
+		return pBindsStrSet(a1, a2);
+	}
+
+	if (PlayerStateChecker::isInMenus()) {
+		bindLabelChanger.overwriteDynamicBindLabels(a2, lang.getLocalizedBindStringData());
+	}*/
+	return p_BindsStrSet_t(a1, a2);
+}
+
+
+// this is used to force disable the game crosshair if user uses the imgui custom crosshair and also to check if slayer is in game playing, as he could be in a cutsene or any other state where user does not have control of the slayer. leaving the commented code for reference. also the actual idHUD_Reticle and idDeclWeaponReticle can not be used here cause id.h doesn't have them.
+//void __fastcall idHUD_Reticle_SetActiveReticleHook(idHUD_Reticle* idHUD_Reticle_a1, unsigned int reticleIndex_a2, idDeclWeaponReticle* idDeclWeaponReticle_a3, unsigned __int8 a4) {
+void __fastcall idHUD_Reticle_SetActiveReticleHook(void* idHUD_Reticle_a1, unsigned int reticleIndex_a2, void* idDeclWeaponReticle_a3, unsigned __int8 a4) {
+
+
+	////! 29/4/24: still using this system from previous mod after all as our new customizedWeapon is extremely frustrating to use as some declweapons arbitrarily do not respect the reticule set rule and vary from weapon to weapon so...funk it!
+	////return pidHUD_Reticle_SetActiveReticle(idHUD_Reticle_a1, reticleIndex_a2, idDeclWeaponReticle_a3, a4);
+	////logInfo("idHUD_Reticle_SetActiveReticleHook Triggered");
+
+	//PlayerStateChecker::updateLastReticleRefresh();
+
+	//idSWFWidget_Hud_Reticle* idSWFWidget_Hud_Reticle_v8 = 0i64;
+	////unsigned int activeReticleStyle = *(unsigned int*)(idHUD_Reticle_a1 + 0x330);
+	//unsigned int activeReticleStyle = (unsigned int)idHUD_Reticle_a1->activeReticleStyle;
+
+	////logInfo("idHUD_Reticle_SetActiveReticleHook: debug 3");
+
+
+	//if (reticleIndex_a2 > idDeclWeaponReticle_reticleStyle_t::RETICLE_STYLE_MAX) {
+	//	idSWFWidget_Hud_Reticle_v8 = 0i64;
+	//}
+	//else {
+	//	idSWFWidget_Hud_Reticle_v8 = idHUD_Reticle_a1->reticles_ptr[reticleIndex_a2]; //! this is fine.	
+
+	//}
+
+	//CustomCrosshairManager::acquireWeaponCoolDownStatus(idSWFWidget_Hud_Reticle_v8, idDeclWeaponReticle_a3);
+
+	////logInfo("debug:  idSWFWidget_Hud_Reticle_v8 is %p ", idSWFWidget_Hud_Reticle_v8);
+	////! idSWFWidget_Hud_Reticle_v8 will be null when the ingame reticle mode is set to None so the rest of this code will not trigger, obviously
+	//if (idSWFWidget_Hud_Reticle_v8) {
+
+	//	idSWFSpriteInstance* idSWFSpriteInstance_v17 = idSWFWidgetManager::getBoundSprite(idSWFWidget_Hud_Reticle_v8);
+
+	//	//logInfo("idHUD_Reticle_SetActiveReticleHook: debug 5");
+
+	//	//? this is the mistake we made we got the wrong spriteInstance and as a result, the scale was inconsistent, we were using this....
+	//	//idSWFSpriteInstance* idSWFSpriteInstance_v17 = idSWFWidget_Hud_Reticle_v8->reticleSprite;
+	//	//? ...instead of this: 
+	//	//__int64 idSWFSpriteInstance_v17 = *(__int64*)(idSWFWidget_Hud_Reticle_v8 + 0x18);
+
+	//	//! looks this work now:
+	//	idSWFSpriteInstanceManager::setHitMarkerState((idHUD_Reticle*)idHUD_Reticle_a1, modSettings::getIsDisableHitMarker());
+
+	//	//logInfo("idHUD_Reticle_SetActiveReticleHook: debug 6");
+
+
+	//	//! this is how we manage to change the scale of the crosshair even when it's already displayed
+	//	if (idDeclWeaponReticle_a3 && idSWFSpriteInstance_v17) {
+
+
+	//		//! from logs, even when the dot crosshair is set in the game menu, idDeclWeaponReticle_a3->style will have the value of the current weapon reticle style so we can use that to set crosshair color then?
+
+	//		//logInfo("debug:  idHUD_Reticle_a1->activeReticleDecl: %p and idDeclWeaponReticle_a3: %p activeReticleStyle: %u reticleIndex_a2: %u", idHUD_Reticle_a1->activeReticleDecl, idDeclWeaponReticle_a3, activeReticleStyle, reticleIndex_a2);
+
+	//		//! if the reticle scale needs to be changed cause user wants it changed, we trigger the sprite reload function
+	//		if (ReticleScaleManager::updateScale(idDeclWeaponReticle_a3)) {
+	//			idSWFSpriteInstanceManager::updateScale(idSWFSpriteInstance_v17, idDeclWeaponReticle_a3->reticleModelScale);
+	//		}
+
+	//		//! if game dot:
+	//		if (activeReticleStyle == idDeclWeaponReticle_reticleStyle_t::RETICLE_STYLE_DOT) {
+
+	//			if (modSettings::getIsUseImguiDotCrosshair()) {
+	//				idSWFWidget_Hud_Reticle_v8->reticleSprite->namedColorId = swfNamedColors_t::SWF_CUSTOM_NAMED_COLOR_INVISIBLE;
+	//			}
+	//			else {
+	//				idSWFWidget_Hud_Reticle_v8->reticleSprite->namedColorId = swfNamedColors_t::SWF_CUSTOM_NAMED_COLOR_DEFAULT;
+	//			}
+
+	//			//? doesn't work to force disable dot:
+	//			//idHUD_Reticle_a1->activeReticleStyle = idDeclWeaponReticle_reticleStyle_t::RETICLE_STYLE_NONE;
+
+	//			//? doesn't work to force disable dot:
+	//			//reticleIndex_a2 = idDeclWeaponReticle_reticleStyle_t::RETICLE_STYLE_NONE;
+
+	//			//idDeclWeaponReticleManager::debugPrintCurrentDeclWeaponReticle(idDeclWeaponReticle_a3);
+	//			//! this used to crash because of bad padding in our generated classes
+	//			/*ReticleColorManager::updateDotColorV3(idSWFWidget_Hud_Reticle_v8, idDeclWeaponReticle_a3, idSWFSpriteInstance_v17);*/
+
+	//		}
+	//	}
+	//}
+	return p_idHUD_Reticle_SetActiveReticle_t(idHUD_Reticle_a1, reticleIndex_a2, idDeclWeaponReticle_a3, a4);
+}
+
+
+
+//idColor* __fastcall convertIdDeclUIColorToidColorHook(__int64 idDeclUIColor_a1, idColor* idColorPtr_a2, int colorId_a3) { //! there is a bak of the old version of this hook in debug.h
+// let us change color of hud elements
+void* __fastcall convertIdDeclUIColorToidColorHook(__int64 idDeclUIColor_a1, void* idColorPtr_a2, int colorId_a3) { //! 
+
+	
+	////! by acequiring this address we always know where the color of a specifi elelment on the hud is. this is useful when user changes profile cause idDeclUIColor_a1 will change in that case and there are many color profiles.
+	//GameHudColorsManager::acquireIdDeclUIColorAddr(idDeclUIColor_a1);
+
+	//if (colorId_a3 == swfNamedColors_t::SWF_CUSTOM_NAMED_COLOR_DEFAULT) {
+	//	return pconvertIdDeclUIColorToidColor(idDeclUIColor_a1, idColorPtr_a2, colorId_a3);
+	//}
+
+	////? would still need a check for the color above old make namedColor and SWF_CUSTOM_NAMED_COLOR_DEFAULT
+
+	////! here in we check if colorId_a3> is not default  and if it's in bound:
+	//if ((colorId_a3 > swfNamedColors_t::SWF_CUSTOM_NAMED_COLOR_DEFAULT) && (colorId_a3 <= swfNamedColors_t::SWF_CUSTOM_NAMED_COLOR_INVISIBLE)) {
+
+	//	//logInfo("convertIdDeclUIColorToidColorHook: colorId_a3: %d", colorId_a3);
+
+	//	//? 30/4/24 removing this just 5 min for testing....
+	//	*idColorPtr_a2 = *(idColor*)GameHudColorsManager::getCustomIdColor(colorId_a3);
+	//	return idColorPtr_a2;
+
+	//}
+
+	return p_convertIdDeclUIColorToidColor_t(idDeclUIColor_a1, idColorPtr_a2, colorId_a3);
+}
+
+
+// actually changing the color of sprites on the hud
+void __fastcall setSpriteInstanceColorHook(__int64 idSWFSpriteInstance_a1, unsigned int namedColorId_a2) {
+		
+
+	//? this is used to get the addresses of all the sprites instances we are interested in. So at least, the frag icon instances so this should be UNcommented all the time. As those instances addresses are acquired when a level load or when the idCmd::reapplySwfColorsCmd is called.
+	/*GameHudColorsManager::acquireMonitoredSpriteInstanceAddr(idSWFSpriteInstance_a1);
+
+
+	namedColorId_a2 = GameHudColorsManager::getColor(idSWFSpriteInstance_a1, namedColorId_a2);*/
+		
+
+	return p_setSpriteInstanceColor_t(idSWFSpriteInstance_a1, namedColorId_a2);
+}
+
+
+// this is the hook used to render the multi layered ice grenade icon
+__int64 __fastcall printOutlinedStringMB_hook(
+	__int64 idRenderModelGui_a1PtrToPtr,
+	int a2,
+	__int64 a3,
+	int a4,
+	__int64 a5,
+	char* a6,
+	int a7,
+	int a8
+) {
+
+	//__int64 gui = *(__int64*)idRenderModelGui_a1PtrToPtr;
+
+	//auto iceNadeIconData = CustomIceNadeIconManager::getData();
+	//iceNadeIconData.updateMaterials(); //? this could be the answer to the crashing when loading levels....fingers crossed...Might be a bit slower than before cause of matr fetching (?)...Update no more crash indeed so far.
+
+	//if (iceNadeIconData.isRenderingAllowed) {
+	//	idRenderModelGuiManager::drawIceIcon(gui, iceNadeIconData);
+
+	//}
+
+	//return hudString::textForidCmd.size();
+	
+	//! temporary:
+	return p_printOutlinedString_t(idRenderModelGui_a1PtrToPtr, a2, a3, a4, a5, a6, a7, a8);
+}
+
+
 
 
 #pragma region Proxy
@@ -318,6 +523,38 @@ int init()
 	g_logfile << "p_SelectWeaponForSelectionGroup_t_Target " << std::hex << p_SelectWeaponForSelectionGroup_t_Target << "\n";
 
 
+	p_isKeyPressed_t_Target = reinterpret_cast<isKeyPressed_t>(
+		PatternScan(id::DE_EXE_MODULE, isKeyPressedSig));
+	g_logfile << "p_isKeyPressed_t_Target " << std::hex << p_isKeyPressed_t_Target << "\n";
+
+
+	p_BindsStrSet_t_Target = reinterpret_cast<BindsStrSet_t>(
+		PatternScan(id::DE_EXE_MODULE, pBindsStrSetSig));
+	g_logfile << "p_BindsStrSet_t_Target " << std::hex << p_BindsStrSet_t_Target << "\n";
+
+
+	p_idHUD_Reticle_SetActiveReticle_t_Target = reinterpret_cast<idHUD_Reticle_SetActiveReticle_t>(
+		PatternScan(id::DE_EXE_MODULE, setActiveReticleSig));
+	g_logfile << "p_idHUD_Reticle_SetActiveReticle_t_Target " << std::hex << p_idHUD_Reticle_SetActiveReticle_t_Target << "\n";
+
+	p_convertIdDeclUIColorToidColor_t_Target = reinterpret_cast<convertIdDeclUIColorToidColor_t>(
+		PatternScan(id::DE_EXE_MODULE, convertIdDeclUIColorToidColorTargetSig));
+	g_logfile << "p_convertIdDeclUIColorToidColor_t_Target " << std::hex << p_convertIdDeclUIColorToidColor_t_Target << "\n";
+
+
+	p_setSpriteInstanceColor_t_Target = reinterpret_cast<setSpriteInstanceColor_t>(
+		PatternScan(id::DE_EXE_MODULE, setSpriteInstanceSig));
+	g_logfile << "p_setSpriteInstanceColor_t_Target " << std::hex << p_setSpriteInstanceColor_t_Target << "\n";
+
+
+	p_printOutlinedString_t_Target  = reinterpret_cast<printOutlinedString_t>(
+		PatternScan(id::DE_EXE_MODULE, printOutlinedStringMBSig));
+
+
+
+
+
+
 
 	if (MH_Initialize() != MH_OK) {
 		ret = 1;
@@ -388,6 +625,42 @@ int init()
 
 	if (MH_CreateHook(p_SelectWeaponForSelectionGroup_t_Target, &SelectWeaponForSelectionGroupHook, reinterpret_cast<void**>(&p_SelectWeaponForSelectionGroup_t))) {
 		g_logfile << "failed to create hook SelectWeaponForSelectionGroupHook";
+		ret = 1;
+		goto ret;
+	}
+
+	if (MH_CreateHook(p_isKeyPressed_t_Target, &isKeyPressedHook, reinterpret_cast<void**>(&p_isKeyPressed_t))) {
+		g_logfile << "failed to create hook isKeyPressedHook";
+		ret = 1;
+		goto ret;
+	}
+
+	if (MH_CreateHook(p_BindsStrSet_t_Target, &BindsStrSetHook, reinterpret_cast<void**>(&p_BindsStrSet_t))) {
+		g_logfile << "failed to create hook BindsStrSetHook";
+		ret = 1;
+		goto ret;
+	}
+
+	if (MH_CreateHook(p_idHUD_Reticle_SetActiveReticle_t_Target, &idHUD_Reticle_SetActiveReticleHook, reinterpret_cast<void**>(&p_idHUD_Reticle_SetActiveReticle_t))) {
+		g_logfile << "failed to create hook idHUD_Reticle_SetActiveReticleHook";
+		ret = 1;
+		goto ret;
+	}
+
+	if (MH_CreateHook(p_convertIdDeclUIColorToidColor_t_Target, &convertIdDeclUIColorToidColorHook, reinterpret_cast<void**>(&p_convertIdDeclUIColorToidColor_t))) {
+		g_logfile << "failed to create hook convertIdDeclUIColorToidColorHook";
+		ret = 1;
+		goto ret;
+	}
+
+	if (MH_CreateHook(p_setSpriteInstanceColor_t_Target, &setSpriteInstanceColorHook, reinterpret_cast<void**>(&p_setSpriteInstanceColor_t))) {
+		g_logfile << "failed to create hook setSpriteInstanceColorHook";
+		ret = 1;
+		goto ret;
+	}
+
+	if (MH_CreateHook(p_printOutlinedString_t_Target, &printOutlinedStringMB_hook, reinterpret_cast<void**>(&p_printOutlinedString_t))) {
+		g_logfile << "failed to create hook printOutlinedStringMB_hook";
 		ret = 1;
 		goto ret;
 	}
