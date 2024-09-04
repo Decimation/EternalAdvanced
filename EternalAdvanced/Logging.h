@@ -1,4 +1,4 @@
-﻿// Author: Deci | Project: DEAO2 | Name: Logging.h
+﻿// Author: Deci | Project: EternalAdvanced | Name: Logging.h
 // Date: 2024/08/19 @ 12:08:28
 
 #pragma once
@@ -7,12 +7,12 @@
 
 inline std::ofstream g_logfile;
 
-inline void init_log()
+inline void InitLog()
 {
 	g_logfile = std::ofstream("log.txt", std::ios::app);
 }
 
-inline void close_log()
+inline void CloseLog()
 {
 	g_logfile.flush();
 	g_logfile.close();

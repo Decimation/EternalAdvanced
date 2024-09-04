@@ -12,9 +12,11 @@ namespace id
 const inline std::string DE_EXE_NAME = "DOOMEternalx64vk.exe";
 inline HMODULE           DE_EXE_MODULE;
 
-inline void init()
+inline bool InitId()
 {
-	DE_EXE_MODULE = GetModuleHandleA(DE_EXE_NAME.c_str());
+	DE_EXE_MODULE = GetModuleHandle(DE_EXE_NAME.c_str());
+
+	return true;
 }
 
 enum keyNum_t : int

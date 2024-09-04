@@ -7,6 +7,7 @@
 #include <format>
 #include "Logging.h"
 #include <vector>
+#include "ProcessModule.h"
 
 #define DEFINE_FUNCTION_POINTER(returnType, functionName, ...) \
 	typedef returnType(*functionName##_t)(__VA_ARGS__);
@@ -37,48 +38,14 @@
 	name p_##name;		\
 	name p_##name##_Target;*/
 
-#define DEFINE_FUNCTION_POINTER4(function) \
-	DEFINE_FUNCTION_POINTER3(function, function##_t)
-
-DWORD64           PatternScan(const char* szModule, const char* signature);
+namespace ea
+{
 DWORD64           PatternScan(HMODULE hModule, const char* signature);
+DWORD64           PatternScan(const char* szModule, const char* signature);
 std::vector<char> PatternToByte(const char* pattern);
 
-std::string GetCallingModuleName();
-void        EnumerateProcessModules();
-
-
-// General template
-template <typename Ret, bool Void = std::is_void<Ret>::value, typename... Args>
-class Fnc
-{
-	Ret (&fnc_)(Args...);
-
-public:
-	Fnc(Ret (&fnc)(Args...)) : fnc_(fnc)
-	{
-	}
-
-	Ret operator()(Args... args) { return fnc_(args...); }
-};
-
-// Void return specialized template
-template <typename Ret, typename... Args>
-class Fnc<Ret, true, Args...>
-{
-	void (&fnc_)(Args...);
-
-public:
-	Fnc(void (&fnc)(Args...)) : fnc_(fnc)
-	{
-	}
-
-	void operator()(Args... args) { (fnc_)(args...); }
-};
-
-// Fnc helper function
-template <class Ret, bool Void = std::is_void<Ret>::value, class... Args>
-const Fnc<Ret, Void, Args...> make_fnc(Ret (&fnc)(Args...))
-{
-	return Fnc<Ret, Void, Args...>(fnc);
+std::string                GetCallingModuleName();
+std::vector<ProcessModule> EnumerateProcessModules();
+__int64 FindPtrFromRelativeOffset(uintptr_t instructionStartAddress, const int instructionOffset,
+								  const int nextInstructionOffset);
 }

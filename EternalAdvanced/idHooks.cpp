@@ -1,7 +1,7 @@
 #include "idHooks.h"
 
-__int64 __fastcall idUsercmdGenLocalSendBtnPressMB_Hook(__int64      idUsercmdGenLocal_a1, unsigned int deviceNumMB_a2,
-                                                        id::keyNum_t keyNum_t_a3, unsigned __int8       isDown_a4)
+__int64 __fastcall ea::idUsercmdGenLocalSendBtnPressMB_Hook(__int64 idUsercmdGenLocal_a1, unsigned int deviceNumMB_a2,
+															id::keyNum_t keyNum_t_a3, unsigned __int8 isDown_a4)
 {
 	static int             lastKeyNum_t_a3 = -1;
 	static unsigned __int8 lastIsDown_a4   = 0;

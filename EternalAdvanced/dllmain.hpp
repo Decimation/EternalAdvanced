@@ -19,7 +19,7 @@
 #include "id.h"
 #include <functional>
 
-int init();
+bool Init();
 
 
 /*__int64 __fastcall idUsercmdGenLocalSendBtnPressMB_Hook(__int64      idUsercmdGenLocal_a1, unsigned int deviceNumMB_a2,

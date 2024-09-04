@@ -1,6 +1,9 @@
 #include "Memory.h"
 
+#include <functional>
 
+namespace ea
+{
 std::vector<char> PatternToByte(const char* pattern)
 {
 	auto bytes = std::vector<char>{};
@@ -20,26 +23,7 @@ std::vector<char> PatternToByte(const char* pattern)
 	return bytes;
 };
 
-
-DWORD64 PatternScan(const char* szModule, const char* signature)
-{
-	HMODULE hModule = GetModuleHandleA(szModule);
-	return PatternScan(hModule, signature);
-}
-
-std::string GetCallingModuleName()
-{
-	HMODULE hModule = GetModuleHandle(nullptr);
-	TCHAR   szModuleName[MAX_PATH];
-
-	if (GetModuleFileName(hModule, szModuleName, MAX_PATH) != 0) {
-		std::string moduleName(szModuleName);
-		return moduleName;
-	}
-	return "";
-}
-
-DWORD64 PatternScan(HMODULE hModule, const char* signature)
+DWORD64 PatternScan(const HMODULE hModule, const char* signature)
 {
 	MODULEINFO mInfo;
 
@@ -48,6 +32,7 @@ DWORD64 PatternScan(HMODULE hModule, const char* signature)
 	}
 
 	K32GetModuleInformation(GetCurrentProcess(), hModule, &mInfo, sizeof(MODULEINFO));
+
 	DWORD64 base         = (DWORD64) mInfo.lpBaseOfDll;
 	DWORD64 sizeOfImage  = (DWORD64) mInfo.SizeOfImage;
 	auto    patternBytes = PatternToByte(signature);
@@ -58,8 +43,8 @@ DWORD64 PatternScan(HMODULE hModule, const char* signature)
 	for (DWORD64 i = 0; i < sizeOfImage - patternLength; i++) {
 		bool found = true;
 		for (DWORD64 j = 0; j < patternLength; j++) {
-			char a = '\?';
-			char b = *(char*) (base + i + j);
+			const char a = '\?';
+			const char b = *(char*) (base + i + j);
 			found &= data[j] == a || data[j] == b;
 		}
 		if (found) {
@@ -71,15 +56,35 @@ DWORD64 PatternScan(HMODULE hModule, const char* signature)
 	return 0;
 }
 
+DWORD64 PatternScan(const char* szModule, const char* signature)
+{
+	const HMODULE hModule = GetModuleHandle(szModule);
+	return PatternScan(hModule, signature);
+}
 
-void EnumerateProcessModules()
+std::string GetCallingModuleName()
+{
+	const HMODULE hModule = GetModuleHandle(nullptr);
+	TCHAR         szModuleName[MAX_PATH];
+
+	if (GetModuleFileName(hModule, szModuleName, MAX_PATH) != 0) {
+		std::string moduleName(szModuleName);
+		return moduleName;
+	}
+	return "";
+}
+
+
+std::vector<ProcessModule> EnumerateProcessModules()
 {
 	// Get the handle to the current process
 	HANDLE hProcess = GetCurrentProcess();
 
 	// Get the list of module handles for the current process
-	HMODULE hModules[1024];
-	DWORD   cbNeeded;
+	HMODULE                    hModules[1024];
+	DWORD                      cbNeeded;
+	std::vector<ProcessModule> modules = {};
+
 	if (EnumProcessModules(hProcess, hModules, sizeof(hModules), &cbNeeded)) {
 		// Calculate the number of modules
 		int numModules = cbNeeded / sizeof(HMODULE);
@@ -90,9 +95,38 @@ void EnumerateProcessModules()
 			TCHAR szModuleName[MAX_PATH];
 			if (GetModuleFileNameEx(hProcess, hModules[i], szModuleName, sizeof(szModuleName) / sizeof(TCHAR))) {
 				// Print the module file name
-				g_logfile << szModuleName << std::endl;
+				// g_logfile << szModuleName << std::endl;
+				modules.emplace_back(std::string{szModuleName}, hModules[i]);
 			}
 		}
 	}
+
+	return modules;
 }
 
+__int64 FindPtrFromRelativeOffset(uintptr_t instructionStartAddress, const int instructionOffset,
+								  const int nextInstructionOffset)
+{
+	g_logfile << "FindPtrFromRelativeOffset: " << std::hex << instructionStartAddress << "\n";
+
+	__int64 relativeOffsetAddr = instructionStartAddress + instructionOffset;
+	HANDLE  hProcess           = GetCurrentProcess();
+	uint8_t buffer[4]; //! reading 4 cause it's an 4 bytes offset.	
+	SIZE_T  bytesRead;
+	//! int and not uint as the offset has to be signed
+	int relativeOffsetValue = 0;
+	if (ReadProcessMemory(hProcess, (LPCVOID) relativeOffsetAddr, buffer, sizeof(buffer), &bytesRead)) {
+		if (bytesRead == sizeof(buffer)) {
+			int     relativeOffsetValue    = *reinterpret_cast<int*>(buffer);
+			__int64 nextInstructionAddress = instructionStartAddress + nextInstructionOffset;
+			__int64 ptr                    = nextInstructionAddress + relativeOffsetValue;
+			g_logfile << "FindPtrFromRelativeOffset: found ptr: " << std::hex << ptr << "\n";
+			return ptr;
+		}
+	} else {
+		g_logfile << "FindPtrFromRelativeOffset: failed for instructionStartAddress:  " << instructionStartAddress <<
+			"\n";
+	}
+	return 0;
+}
+}

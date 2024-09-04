@@ -4,20 +4,6 @@
 #include "idHooks.h"
 
 
-template <typename T>
-inline MH_STATUS MH_CreateHookEx(LPVOID pTarget, LPVOID pDetour, T** ppOriginal)
-{
-	return MH_CreateHook(pTarget, pDetour, reinterpret_cast<LPVOID*>(ppOriginal));
-}
-
-template <typename T>
-inline MH_STATUS MH_CreateHookApiEx(
-	LPCWSTR pszModule, LPCSTR pszProcName, LPVOID pDetour, T** ppOriginal)
-{
-	return MH_CreateHookApi(pszModule, pszProcName, pDetour, reinterpret_cast<LPVOID*>(ppOriginal));
-}
-
-
 #pragma region Proxy
 struct msimg32_dll
 {
@@ -75,13 +61,14 @@ void setupFunctions()
 #pragma endregion
 
 
-int init()
+bool Init()
 {
-	int ret = 0;
+	bool ret = true;
+	if (!id::InitId()) {
+	}
+	if (!ea::InitHooks()) {
+	}
 
-	id::init();
-
-	inithooks();
 ret:
 	return ret;
 }
@@ -93,36 +80,36 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 
 
 	switch (ul_reason_for_call) {
-	case DLL_PROCESS_ATTACH:
-		init_log();
-	// DisableThreadLibraryCalls(hModule);
-		g_logfile << std::format("DllMain {}", (void*) hModule) << '\n';
-		g_logfile << "Dll attach" << '\n';
-		if (GetCallingModuleName().ends_with("idTechLauncher.exe")) {
-			g_logfile << "Exiting" << '\n';
+		case DLL_PROCESS_ATTACH:
+			InitLog();
+		// DisableThreadLibraryCalls(hModule);
+			g_logfile << std::format("DllMain {}", (void*) hModule) << '\n';
+			g_logfile << "Dll attach" << '\n';
+			if (ea::GetCallingModuleName().ends_with("idTechLauncher.exe")) {
+				g_logfile << "Exiting" << '\n';
+				FreeLibrary(msimg32.dll);
+				CloseLog();
+				return TRUE;
+			}
+
+			char path[MAX_PATH];
+			GetWindowsDirectory(path, sizeof(path));
+
+		// Example: "\\System32\\version.dll"
+			strcat_s(path, "\\System32\\msimg32.dll");
+			msimg32.dll = LoadLibrary(path);
+			setupFunctions();
+			Init();
+		//CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(Initialise), (PVOID)hModule, NULL, NULL);
+
+		// Add here your code, I recommend you to create a thread
+			break;
+		case DLL_PROCESS_DETACH:
+
+			g_logfile << "Detaching" << '\n';
 			FreeLibrary(msimg32.dll);
-			close_log();
-			return TRUE;
-		}
-
-		char path[MAX_PATH];
-		GetWindowsDirectory(path, sizeof(path));
-
-	// Example: "\\System32\\version.dll"
-		strcat_s(path, "\\System32\\msimg32.dll");
-		msimg32.dll = LoadLibrary(path);
-		setupFunctions();
-		init();
-	//CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(Initialise), (PVOID)hModule, NULL, NULL);
-
-	// Add here your code, I recommend you to create a thread
-		break;
-	case DLL_PROCESS_DETACH:
-
-		g_logfile << "Detaching" << '\n';
-		FreeLibrary(msimg32.dll);
-		close_log();
-		break;
+			CloseLog();
+			break;
 	}
 
 ret:
